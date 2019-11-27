@@ -13,16 +13,57 @@ import (
 	"unsafe"
 	"syscall"
 	"os"
+	"path"
+	"strings"
 )
+
+const Macro = "XXXXXX"
+
+func Template(base string) string {
+	tmp := os.TempDir()
+	return path.Join(tmp, base + "." + Macro)
+}
+
+type Error struct {
+	error
+	m string
+}
+func (self Error) Error() string {
+	return self.m
+}
+func newError(message string) Error {
+	var e = Error{m: message}
+	return e
+}
+
+// char *mkdtemp(char *template);
+func MkDTemp(template string) (name string, e error) {
+	if !strings.HasSuffix(template, Macro) {
+		e = newError("Invalid template")
+		return
+	}
+	buf := make([]byte, 8192)
+	buf = []byte(template)
+	rc := C.mkdtemp((*C.char)(unsafe.Pointer(&buf[0])))
+	if rc == nil {
+		e = syscall.Errno(C.getErrno())
+		return
+	}
+	return C.GoString(rc), nil
+}
 
 // int mkstemp(char *template);
 func MkSTemp(template string) (file *os.File, e error) {
+	if !strings.HasSuffix(template, Macro) {
+		e = newError("Invalid template")
+		return
+	}
 	buf := make([]byte, 8192)
 	buf = []byte(template)
 	rc := C.mkstemp((*C.char)(unsafe.Pointer(&buf[0])))
 	if int(rc) == -1 {
 		e = syscall.Errno(C.getErrno())
-		return nil, e
+		return
 	}
 	return os.NewFile(uintptr(rc), string(buf)), nil
 }

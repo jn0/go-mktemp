@@ -28,12 +28,22 @@ func TestMkTemp(t *testing.T) {
 	}
 	e = os.Remove(file.Name())
 	if e != nil { t.Fatalf("Cannot remove %#v", file); }
+	t.Logf("MkSTemp(%+q): name=%+q ok", templ, file.Name())
 
 	name, e := MkTemp(templ)
 	t.Logf("MkTemp(%+q): name=%+q e=%v", templ, name, e)
 	if e != nil { t.Fatalf("Failed MkTemp(%+q): %v", templ, e); }
 	e = os.Remove(name)
 	if e != nil { t.Fatalf("Cannot remove %#v", name); }
+	t.Logf("MkTemp(%+q): name=%+q ok", templ, name)
+
+	templ = Template("tempDir")
+	name, e = MkDTemp(templ)
+	t.Logf("MkDTemp(%+q): name=%+q e=%v", templ, name, e)
+	if e != nil { t.Fatalf("Failed MkDTemp(%+q): %v", templ, e); }
+	e = os.Remove(name)
+	if e != nil { t.Fatalf("Cannot remove %#v dir", name); }
+	t.Logf("MkDTemp(%+q): name=%+q ok", templ, name)
 
 	t.Logf("done")
 }
